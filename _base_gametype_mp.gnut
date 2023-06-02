@@ -22,7 +22,7 @@ global function TitanPlayerHotDropsIntoLevel
 global function SetRecalculateRespawnAsTitanStartPointCallback
 
 struct {
-	bool killcamsEnabled = false
+	bool killcamsEnabled = true
 	bool playerDeathsHidden = false
 	int titanDamageGameStat = -1
 
@@ -36,8 +36,8 @@ void function BaseGametype_Init_MPSP()
 {
 	AddSpawnCallback( "info_intermission", SetIntermissionCamera )
 
-	AddPostDamageCallback( "player", AddToTitanDamageStat )
-	AddPostDamageCallback( "npc_titan", AddToTitanDamageStat )
+	AddDamageCallback( "player", AddToTitanDamageStat )
+	AddDamageCallback( "npc_titan", AddToTitanDamageStat )
 
 	AddCallback_OnNPCKilled( CheckForAutoTitanDeath )
 	AddCallback_OnPlayerKilled( CheckForAutoTitanDeath )
@@ -298,9 +298,8 @@ void function PostDeathThread_MP( entity player, var damageInfo ) // based on ga
 			{
 				alreadyAssisted[attackerInfo.attacker.GetEncodedEHandle()] <- true
 				Remote_CallFunction_NonReplay( attackerInfo.attacker, "ServerCallback_SetAssistInformation", attackerInfo.damageSourceId, attacker.GetEncodedEHandle(), player.GetEncodedEHandle(), attackerInfo.time )
-				// AddPlayerScore( attackerInfo.attacker, "PilotAssist" )
-				// attackerInfo.attacker.AddToPlayerGameStat( PGS_ASSISTS, 1 )
-				// Extend for Kill
+				//AddPlayerScore( attackerInfo.attacker, "PilotAssist" )
+				//attackerInfo.attacker.AddToPlayerGameStat( PGS_ASSISTS, 1 )
 				PreScoreEventUpdateStats( attackerInfo.attacker, player )
 				if ( player.GetTeam() != attackerInfo.attacker.GetTeam() )
 				{
@@ -342,7 +341,6 @@ void function PostDeathThread_MP( entity player, var damageInfo ) // based on ga
 							attackerInfo.attacker.AddToPlayerGameStat( PGS_NPC_KILLS, 1 )
 					}
 				}
-				// Extend for Kill
 			}
 		}
 
