@@ -28,7 +28,25 @@ void function SwordCore_OnPlayedOrNPCKilled( entity victim, entity attacker, var
 		return
 
 	entity soul = attacker.GetTitanSoul()
-	if ( !IsValid( soul ) || !SoulHasPassive( soul, ePassives.PAS_RONIN_SWORDCORE ) )
+	//if ( !IsValid( soul ) || !SoulHasPassive( soul, ePassives.PAS_RONIN_SWORDCORE ) )
+	if ( !IsValid( soul ) )
+		return
+
+	bool hasPasSwordCore = false
+	foreach( entity offhand in attacker.GetOffhandWeapons() )
+	{
+		if( offhand.GetWeaponClassName() == "mp_titancore_shift_core" )
+		{
+			if( offhand.HasMod( "pas_ronin_sword_core" ) )
+				hasPasSwordCore = true
+			if( offhand.HasMod( "dash_core" ) )
+				return
+		}
+	}
+	if( SoulHasPassive( soul, ePassives.PAS_RONIN_SWORDCORE ) )
+		hasPasSwordCore = true
+	
+	if( !hasPasSwordCore )
 		return
 
 	float curTime = Time()
@@ -53,6 +71,9 @@ var function OnWeaponPrimaryAttack_DoNothing( entity weapon, WeaponPrimaryAttack
 
 bool function OnCoreCharge_Shift_Core( entity weapon )
 {
+	if( weapon.HasMod( "dash_core" ) )
+		return OnCoreCharge_Dash_Core( weapon )
+
 	if ( !OnAbilityCharge_TitanCore( weapon ) )
 		return false
 
@@ -88,6 +109,9 @@ bool function OnCoreCharge_Shift_Core( entity weapon )
 
 void function OnCoreChargeEnd_Shift_Core( entity weapon )
 {
+	if( weapon.HasMod( "dash_core" ) )
+		return OnCoreChargeEnd_Dash_Core( weapon )
+		
 	#if SERVER
 	entity owner = weapon.GetWeaponOwner()
 	OnAbilityChargeEnd_TitanCore( weapon )
@@ -115,6 +139,8 @@ void function RestoreWeapon( entity owner, entity weapon )
 
 var function OnAbilityStart_Shift_Core( entity weapon, WeaponPrimaryAttackParams attackParams )
 {
+	if( weapon.HasMod( "dash_core" ) )
+		return OnAbilityStart_Dash_Core( weapon, attackParams )
 	OnAbilityStart_TitanCore( weapon )
 
 	entity owner = weapon.GetWeaponOwner()
