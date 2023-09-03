@@ -53,6 +53,10 @@ global function GetDebugRodeoPrint
 global function SetApplyBatteryCallback
 #endif
 
+// Extend
+global function SetTouchBatteryCallback
+// End
+
 const float BATTERY_PICKUP_IGNORE_FRAC = 0.98
 const RODEO_EXPLOSION_DAMAGEFRAC = 0.3
 global const RODEO_BATTERY_MODEL_FOR_RODEO_ANIMS = $"models/props/titan_battery_static/titan_battery_static.mdl" //Need a separate one for rodeo anims, instead of manually rotating the existing one
@@ -101,6 +105,10 @@ struct
 	table<entity, bool> playersThatWantToUseRodeoGrenade
 
 	void functionref(entity,entity,entity) applyBatteryCallback
+
+	// Extend
+	void functionref(entity,entity) touchBatteryCallback
+	// End
 } file
 
 //-----------------------------------------------------------------------------
@@ -1852,6 +1860,10 @@ void function Rodeo_OnTouchBatteryPack_Internal( entity player, entity batteryPa
 	}
 	else
 	{
+		// Extend
+		if ( file.touchBatteryCallback != null )
+			file.touchBatteryCallback( player, battery )
+		// End
 		if ( IsCloaked( player ) )
 			Battery_StopFX( batteryPack ) //Will be turned on again when player loses cloak
 
@@ -2457,3 +2469,8 @@ bool function ClientCommand_TryNukeGrenade( entity player, array<string> args )
 	return true
 }
 #endif
+
+void function SetTouchBatteryCallback( void functionref(entity,entity) func )
+{
+	file.touchBatteryCallback = func
+}
