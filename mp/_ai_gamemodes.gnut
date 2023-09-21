@@ -19,6 +19,7 @@ struct
 
 void function AiGameModes_Init()
 {
+	
 }
 
 //------------------------------------------------------
@@ -54,7 +55,8 @@ void function AiGameModes_SpawnDropShip( vector pos, vector rot, int team, int c
 	foreach ( guy in guys )
 	{
 		SetUpNPCWeapons( guy )
-		guy.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+		// no need to setup ai here...
+		//guy.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
 	}
 	
 	if ( squadHandler != null )
@@ -62,17 +64,17 @@ void function AiGameModes_SpawnDropShip( vector pos, vector rot, int team, int c
 }
 
 
-void function AiGameModes_SpawnDropPod( vector pos, vector rot, int team, string content /*( ͡° ͜ʖ ͡°)*/, void functionref( array<entity> guys ) squadHandler = null, int flags = 0 )
+void function AiGameModes_SpawnDropPod( vector pos, vector rot, int team, string content /*( ͡° ͜ʖ ͡°)*/, void functionref( array<entity> guys ) squadHandler = null, int droppodFlag = 0 )
 {
 	entity pod = CreateDropPod( pos, <0,0,0> )
 	
-	InitFireteamDropPod( pod, flags )
+	InitFireteamDropPod( pod, droppodFlag )
 		
 	waitthread LaunchAnimDropPod( pod, "pod_testpath", pos, rot )
 
 	string squadName = MakeSquadName( team, UniqueString( "" ) )
 	array<entity> guys
-	for ( int i = 0; i < 4 ;i++ )
+	for ( int i = 0; i < SQUAD_SIZE; i++ )
 	{
 		entity npc = CreateNPC( content, team, pos,<0,0,0> )
 		DispatchSpawn( npc )
@@ -82,7 +84,8 @@ void function AiGameModes_SpawnDropPod( vector pos, vector rot, int team, string
 		
 		npc.SetParent( pod, "ATTACH", true )
 		
-		npc.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+		// no need to setup ai here...
+		//npc.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
 		guys.append( npc )
 	}
 	
@@ -105,10 +108,10 @@ void function AiGameModes_SpawnReaper( vector pos, vector rot, int team, string 
 	// reaper highlight
 	Highlight_SetFriendlyHighlight( reaper, "sp_enemy_pilot" )
 	reaper.Highlight_SetParam( 1, 0, < 1,1,1 > )
+	reaper.e.hasDefaultEnemyHighlight = true // mark them as hasDefaultHighlight, so they'll save highlights after phase shift
 	SetDefaultMPEnemyHighlight( reaper )
 	Highlight_SetEnemyHighlight( reaper, "enemy_titan" )
 
-	SetSpawnOption_Titanfall( reaper )
 	SetSpawnOption_Warpfall( reaper )
 	
 	if ( aiSettings != "" )
@@ -132,7 +135,7 @@ void function HotDrop_Spawnpoint( vector origin, int team, float impactTime, boo
 
 	int index = GetParticleSystemIndex( $"P_ar_titan_droppoint" )
 
-	if( hasFriendlyWarning )
+	if( hasFriendlyWarning ) // also warn friendly players, if we enabled friendly fire...
 	{
 		entity effectFriendly = StartParticleEffectInWorld_ReturnEntity( index, origin, surfaceNormal )
 		SetTeam( effectFriendly, team )
@@ -170,21 +173,37 @@ void function HotDrop_Spawnpoint( vector origin, int team, float impactTime, boo
 		damageAreaInfo.Destroy()
 }
 
-// including aisettings stuff specifically for at bounty titans
+
 const float TITANFALL_WARNING_DURATION = 5.0
+const float TITAN_WARPFALL_DELAY = 2.5 // warpfall sound + fx + animation lasts 2.5s, add 2.5s more delay
+// including aisettings stuff specifically for at bounty titans
 void function AiGameModes_SpawnTitan( vector pos, vector rot, int team, string setFile, string aiSettings = "", void functionref( entity titan ) titanHandler = null )
 {
-	entity titan = CreateNPCTitan( setFile, TEAM_BOTH, pos, rot )
-	SetSpawnOption_Titanfall( titan )
-	SetSpawnOption_Warpfall( titan )
-
-	// modified: do a hotdrop spawnpoint warning
 	thread HotDrop_Spawnpoint( pos, team, TITANFALL_WARNING_DURATION, false, damagedef_titan_fall )
+
+	// warpfall variant
+	if ( Flag( "LevelHasRoof" ) )
+	{
+		wait TITAN_WARPFALL_DELAY
+		waitthread NPCPrespawnWarpfallSequence( aiSettings, pos, rot )
+	}
+
+	entity titan = CreateNPCTitan( setFile, team, pos, rot )
+	// normal titanfall
+	if ( !Flag( "LevelHasRoof" ) )
+		SetSpawnOption_Titanfall( titan )
 	
 	if ( aiSettings != "" )
 		SetSpawnOption_AISettings( titan, aiSettings )
 	
 	DispatchSpawn( titan )
+
+	// warpfall variant
+	if ( Flag( "LevelHasRoof" ) )
+	{
+		thread PlayFXOnEntity( TURBO_WARP_COMPANY, titan, "offset" )
+		thread NPCTitanHotdrops( titan, true, "at_hotdrop_drop_2knee_turbo_upgraded" )
+	}
 	
 	if ( titanHandler != null )
 		thread titanHandler( titan )
