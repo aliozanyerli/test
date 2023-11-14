@@ -3124,31 +3124,33 @@ void function Elecriticy_DamagedPlayerOrNPC( entity ent, var damageInfo, asset h
 	entity attacker = DamageInfo_GetAttacker( damageInfo )
 	if ( IsValid( attacker ) && attacker.GetTeam() == ent.GetTeam() && attacker != ent )
 		return
-
-	if ( ent.IsPlayer() )
+	if ( DamageInfo_GetWeapon( damageInfo ).GetWeaponClassName() != "mp_titanweapon_stun_laser" )
 	{
-		thread EMPGrenade_EffectsPlayer( ent, damageInfo )
-	}
-	else if ( ent.IsTitan() )
-	{
-		EMPGrenade_AffectsShield( ent, damageInfo )
-		#if MP
-		GiveEMPStunStatusEffects( ent, 2.5, 1.0, slowTurn, slowMove )
-		#endif
-		thread EMPGrenade_AffectsAccuracy( ent )
-	}
-	else if ( ent.IsMechanical() )
-	{
-		#if MP
-		GiveEMPStunStatusEffects( ent, 2.5, 1.0, slowTurn, slowMove )
-		DamageInfo_ScaleDamage( damageInfo, 2.05 )
-		#endif
-	}
-	else if ( ent.IsHuman() )
-	{
-		#if MP
-		DamageInfo_ScaleDamage( damageInfo, 0.99 )
-		#endif
+		if ( ent.IsPlayer() )
+		{
+			thread EMPGrenade_EffectsPlayer( ent, damageInfo )
+		}
+		else if ( ent.IsTitan() )
+		{
+			EMPGrenade_AffectsShield( ent, damageInfo )
+			#if MP
+			GiveEMPStunStatusEffects( ent, 2.5, 1.0, slowTurn, slowMove )
+			#endif
+			thread EMPGrenade_AffectsAccuracy( ent )
+		}
+		else if ( ent.IsMechanical() )
+		{
+			#if MP
+			GiveEMPStunStatusEffects( ent, 2.5, 1.0, slowTurn, slowMove )
+			DamageInfo_ScaleDamage( damageInfo, 2.05 )
+			#endif
+		}
+		else if ( ent.IsHuman() )
+		{
+			#if MP
+			DamageInfo_ScaleDamage( damageInfo, 0.99 )
+			#endif
+		}
 	}
 
 	if ( inflictor instanceof CBaseGrenade )
